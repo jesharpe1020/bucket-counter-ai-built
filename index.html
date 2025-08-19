@@ -1,114 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#111827" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Buckets" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bucket Counter</title>
-
-    <!-- TailwindCSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              bg: '#0b0f19',
-              fg: '#f9fafb',
-              accent: '#22c55e',
-              danger: '#ef4444'
-            }
-          }
-        }
-      };
-    </script>
-  </head>
-  <body class="min-h-screen bg-bg text-fg antialiased">
-    <main class="mx-auto max-w-md p-4 pb-24">
-      <header class="mb-6 flex items-center justify-between">
-        <h1 class="text-2xl font-semibold">Bucket Counter</h1>
-        <button id="btnEnableSensors" class="hidden rounded bg-accent px-3 py-2 text-sm font-medium text-black">
-          Enable Sensors
-        </button>
-      </header>
-
-      <section class="mb-6 rounded-lg border border-white/10 bg-white/5 p-4">
-        <div class="text-center">
-          <div class="text-sm uppercase tracking-wide text-white/60">Buckets</div>
-          <div id="counterValue" class="mt-2 text-7xl font-bold tabular-nums">0</div>
-        </div>
-        <div class="mt-4 grid grid-cols-3 gap-3">
-          <button id="btnDec" class="rounded bg-white/10 px-4 py-3 text-lg font-semibold hover:bg-white/20 active:scale-[0.98]">–</button>
-          <button id="btnInc" class="rounded bg-white/10 px-4 py-3 text-lg font-semibold hover:bg-white/20 active:scale-[0.98]">+</button>
-          <button id="btnReset" class="rounded bg-danger/90 px-4 py-3 text-lg font-semibold text-white hover:bg-danger">Reset</button>
-        </div>
-      </section>
-
-      <section class="mb-6 rounded-lg border border-white/10 bg-white/5 p-4">
-        <div class="mb-3 text-sm uppercase tracking-wide text-white/70">Calibration</div>
-        <div class="grid grid-cols-3 gap-3">
-          <button id="btnSetGrave" class="rounded bg-white/10 px-3 py-2 font-medium hover:bg-white/20">Set Grave</button>
-          <button id="btnSetDirt" class="rounded bg-white/10 px-3 py-2 font-medium hover:bg-white/20">Set Dirt Pile</button>
-          <button id="btnSetTruck" class="rounded bg-white/10 px-3 py-2 font-medium hover:bg-white/20">Set Truck</button>
-        </div>
-        <div class="mt-3 grid grid-cols-3 gap-3 text-center text-xs text-white/70">
-          <div>Grave: <span id="graveHeadingLabel">—</span>°</div>
-          <div>Dirt: <span id="dirtHeadingLabel">—</span>°</div>
-          <div>Truck: <span id="truckHeadingLabel">—</span>°</div>
-        </div>
-      </section>
-
-      <section class="mb-6 rounded-lg border border-white/10 bg-white/5 p-4">
-        <div class="mb-3 text-sm uppercase tracking-wide text-white/70">Auto Detection</div>
-        <div class="grid grid-cols-2 gap-3">
-          <button id="btnStart" class="rounded bg-accent px-3 py-2 font-semibold text-black hover:opacity-90">Start</button>
-          <button id="btnStop" class="rounded bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Stop</button>
-        </div>
-        <div class="mt-3 text-sm text-white/80">
-          <div>Status: <span id="statusText">Idle</span></div>
-          <div class="mt-1 text-xs text-white/60">Heading: <span id="headingText">0</span>°</div>
-        </div>
-        <details class="mt-3">
-          <summary class="cursor-pointer text-xs text-white/60">Debug</summary>
-          <div class="mt-2 grid grid-cols-2 gap-3 text-xs">
-            <label class="flex items-center justify-between gap-2">
-              <span>Tolerance (°)</span>
-              <input id="inputTolerance" type="number" min="2" max="45" step="1" class="w-20 rounded bg-white/10 p-1" />
-            </label>
-            <label class="flex items-center justify-between gap-2">
-              <span>Debounce (ms)</span>
-              <input id="inputDebounce" type="number" min="250" max="5000" step="50" class="w-24 rounded bg-white/10 p-1" />
-            </label>
-            <label class="col-span-2 flex items-center justify-between gap-2">
-              <span>Require dirt pass</span>
-              <input id="inputRequireDirt" type="checkbox" class="h-4 w-4" />
-            </label>
-          </div>
-        </details>
-      </section>
-
-      <footer class="mt-10 text-center text-xs text-white/50">
-        Offline-capable PWA. Keep screen active while counting for best accuracy.
-      </footer>
+</head>
+<body>
+    <header>
+        <h1>Bucket Counter</h1>
+    </header>
+    <main>
+        <section>
+            <div>
+                <div>buckets</div>
+                <div id="counterValue">0</div>
+            </div>
+            <div>
+                <button id="btnMinus">-</button>
+                <button id="btnPlus">+</button>
+            </div>
+        </section>
+        <section>
+            <div>Calibration</div>
+            <div>
+                <button id="btnSetGrave">Set Grave Pos</button>
+                <button id="btnSetTruck">Set Truck Pos</button>
+            </div>
+            <div>
+                <div>Grave: <span id="graveHeadingLabel">—</span></div>
+                <div>Truck: <span id="truckHeadingLabel">—</span></div>
+            </div>
+        </section>
+        <section>
+            <div>Status</div>
+            <div>
+                <button id="btnSetGrave">Set Grave Pos</button>
+                <button id="btnSetTruck">Set Truck Pos</button>
+            </div>
+            <div>
+                <div>Grave: <span id="graveHeadingLabel">—</span></div>
+                <div>Truck: <span id="truckHeadingLabel">—</span></div>
+            </div>
+        </section>
     </main>
-
-    <script src="./app.js" defer></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(() => {});
-        });
-      }
-    </script>
-  </body>
-  <noscript>
-    This app requires JavaScript to run.
-  </noscript>
-  </html>
-
-
+</body>
+</html>
