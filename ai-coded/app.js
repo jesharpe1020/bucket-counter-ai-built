@@ -129,7 +129,7 @@
     el.headingText.textContent = String(Math.round(currentHeadingDeg));
     el.statusText.textContent = isRunning ? 'Detecting…' : 'Idle';
     if (el.btnToggle) {
-      el.btnToggle.textContent = isRunning ? 'Turn Off' : 'Pause Detection';
+      el.btnToggle.textContent = isRunning ? 'Pause' : 'Turn On';
       el.btnToggle.className = isRunning
         ? 'rounded bg-danger/70 px-3 py-2 font-semibold text-white'
         : 'rounded bg-accent/70 px-3 py-2 font-semibold text-white';
