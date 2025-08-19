@@ -203,6 +203,9 @@
       graveHeading = h;
       save(STORAGE_KEYS.grave, graveHeading);
       render();
+      if (Number.isFinite(graveHeading) && Number.isFinite(truckHeading)) {
+        start();
+      }
     } catch (_) {}
   };
   const setTruck = async () => {
@@ -211,6 +214,9 @@
       truckHeading = h;
       save(STORAGE_KEYS.truck, truckHeading);
       render();
+      if (Number.isFinite(graveHeading) && Number.isFinite(truckHeading)) {
+        start();
+      }
     } catch (_) {}
   };
 
@@ -343,8 +349,20 @@
       }
     }
 
-    el.btnInc.addEventListener('click', manualInc);
-    el.btnDec.addEventListener('click', manualDec);
+    const bindFastTap = (element, handler) => {
+      if (!element) return;
+      const onPointer = (e) => {
+        e.preventDefault();
+        handler();
+      };
+      element.addEventListener('pointerdown', onPointer, { passive: false });
+      // Fallback for older iOS that may not support Pointer Events
+      element.addEventListener('touchstart', onPointer, { passive: false });
+      element.addEventListener('click', onPointer, { passive: false });
+    };
+
+    bindFastTap(el.btnInc, manualInc);
+    bindFastTap(el.btnDec, manualDec);
     if (el.btnNewGrave) el.btnNewGrave.addEventListener('click', newGrave);
     if (el.btnResetCalibration) el.btnResetCalibration.addEventListener('click', resetCalibration);
 
