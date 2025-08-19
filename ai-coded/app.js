@@ -20,7 +20,7 @@
 
   // Default config
   const DEFAULTS = {
-    toleranceDeg: 10,
+    toleranceDeg: 15,
     debounceMs: 4000,
   };
 
@@ -45,8 +45,7 @@
     btnToggle: document.getElementById('btnToggle'),
     statusText: document.getElementById('statusText'),
     headingText: document.getElementById('headingText'),
-    inputTolerance: document.getElementById('inputTolerance'),
-    inputDebounce: document.getElementById('inputDebounce'),
+    // Debug inputs removed
     btnEnableSensors: null
   };
 
@@ -129,10 +128,14 @@
     el.truckHeadingLabel.textContent = Number.isFinite(truckHeading) ? Math.round(truckHeading) : '—';
     el.headingText.textContent = String(Math.round(currentHeadingDeg));
     el.statusText.textContent = isRunning ? 'Detecting…' : 'Idle';
-    if (el.btnToggle) el.btnToggle.textContent = isRunning ? 'Turn Off' : 'Turn On';
+    if (el.btnToggle) {
+      el.btnToggle.textContent = isRunning ? 'Turn Off' : 'Turn On';
+      el.btnToggle.className = isRunning
+        ? 'rounded bg-danger/50 px-3 py-2 font-semibold text-white'
+        : 'rounded bg-accent/50 px-3 py-2 font-semibold text-black';
+    }
 
-    el.inputTolerance.value = String(toleranceDeg);
-    el.inputDebounce.value = String(debounceMs);
+    // Debug inputs removed
   };
 
   // Auto-detect increment: +1
@@ -307,14 +310,7 @@
     if (isRunning) return;
     const granted = await ensureSensorPermissions();
     if (!granted) {
-      const insecure =
-        location.protocol !== 'https:' &&
-        location.hostname !== 'localhost' &&
-        location.hostname !== '127.0.0.1';
-      el.statusText.textContent = insecure
-        ? 'Motion blocked on HTTP. Use HTTPS or enable in Safari settings.'
-        : 'Permission denied. Enable motion/orientation in browser settings, then Start.';
-      // No enable button to show
+      el.statusText.textContent = 'Permission denied. Enable motion/orientation in browser settings, then Start.';
       render();
       return;
     }
@@ -340,29 +336,9 @@
     render();
 
     // On iOS (permission-gated), surface status but do not show an enable button
-    const needsExplicitPermission =
-      (window.DeviceMotionEvent && typeof window.DeviceMotionEvent.requestPermission === 'function') ||
-      (window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission === 'function');
-    if (needsExplicitPermission) {
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-        el.statusText.textContent = 'For iOS, use HTTPS for sensors. Grant permissions in Settings if needed.';
-      }
-    }
 
-    const bindFastTap = (element, handler) => {
-      if (!element) return;
-      const onPointer = (e) => {
-        e.preventDefault();
-        handler();
-      };
-      element.addEventListener('pointerdown', onPointer, { passive: false });
-      // Fallback for older iOS that may not support Pointer Events
-      element.addEventListener('touchstart', onPointer, { passive: false });
-      element.addEventListener('click', onPointer, { passive: false });
-    };
-
-    bindFastTap(el.btnInc, manualInc);
-    bindFastTap(el.btnDec, manualDec);
+    if (el.btnInc) el.btnInc.addEventListener('click', (e) => { e.preventDefault(); manualInc(); });
+    if (el.btnDec) el.btnDec.addEventListener('click', (e) => { e.preventDefault(); manualDec(); });
     if (el.btnNewGrave) el.btnNewGrave.addEventListener('click', newGrave);
     if (el.btnResetCalibration) el.btnResetCalibration.addEventListener('click', resetCalibration);
 
@@ -377,22 +353,7 @@
       }
     });
 
-    el.inputTolerance.addEventListener('change', () => {
-      const v = Number(el.inputTolerance.value);
-      if (Number.isFinite(v) && v >= 2 && v <= 45) {
-        toleranceDeg = v;
-        save(STORAGE_KEYS.tolerance, toleranceDeg);
-      }
-      render();
-    });
-    el.inputDebounce.addEventListener('change', () => {
-      const v = Number(el.inputDebounce.value);
-      if (Number.isFinite(v) && v >= 250 && v <= 5000) {
-        debounceMs = v;
-        save(STORAGE_KEYS.debounceMs, debounceMs);
-      }
-      render();
-    });
+    // Debug inputs removed
 
     // Enable Sensors button removed
 
