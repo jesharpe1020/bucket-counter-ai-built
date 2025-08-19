@@ -157,12 +157,23 @@
       if (!elem) return;
       elem.classList.toggle('hidden', !shouldShow);
     };
-    show(el.instructionText, !hasActivated);
+    // Instruction text content flow
+    if (el.instructionText) {
+      if (!hasActivated) {
+        el.instructionText.textContent = 'Press Start to enable motion detection. Then set Grave and Truck positions.';
+      } else if (!Number.isFinite(truckHeading)) {
+        el.instructionText.textContent = 'Set Truck Position';
+      } else if (!Number.isFinite(graveHeading)) {
+        el.instructionText.textContent = 'Set Grave Position';
+      }
+    }
+    const shouldShowInstruction = !hasActivated || !calibrated;
+    show(el.instructionText, shouldShowInstruction);
     show(el.statusBlock, hasActivated);
     show(el.calibrationControls, hasActivated);
     show(el.calibrationHeadings, hasActivated);
     show(el.resetCalibrationBlock, hasActivated);
-    show(el.newGraveBlock, calibrated);
+    show(el.newGraveBlock, hasActivated);
   };
 
   // Auto-detect increment: +1
