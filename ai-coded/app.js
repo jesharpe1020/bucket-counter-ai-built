@@ -27,6 +27,7 @@
   // State
   let currentHeadingDeg = 0; // 0..360
   let isRunning = false;
+  let hasActivated = false; // became true after first successful Start
   let lastIncrementTs = 0;
   let lastHeadingTs = 0;
   let screenWakeLock = null;
@@ -45,6 +46,13 @@
     btnToggle: document.getElementById('btnToggle'),
     statusText: document.getElementById('statusText'),
     headingText: document.getElementById('headingText'),
+    // Visibility blocks
+    instructionText: document.getElementById('instructionText'),
+    calibrationControls: document.getElementById('calibrationControls'),
+    calibrationHeadings: document.getElementById('calibrationHeadings'),
+    resetCalibrationBlock: document.getElementById('resetCalibrationBlock'),
+    statusBlock: document.getElementById('statusBlock'),
+    newGraveBlock: document.getElementById('newGraveBlock'),
     // Debug inputs removed
     btnEnableSensors: null
   };
@@ -127,15 +135,34 @@
     el.graveHeadingLabel.textContent = Number.isFinite(graveHeading) ? Math.round(graveHeading) : '—';
     el.truckHeadingLabel.textContent = Number.isFinite(truckHeading) ? Math.round(truckHeading) : '—';
     el.headingText.textContent = String(Math.round(currentHeadingDeg));
-    el.statusText.textContent = isRunning ? 'Detecting…' : 'Idle';
+    const calibrated = Number.isFinite(graveHeading) && Number.isFinite(truckHeading);
+    if (isRunning && !calibrated) {
+      el.statusText.textContent = 'Ready to calibrate';
+    } else if (isRunning && calibrated) {
+      el.statusText.textContent = 'Detecting…';
+    } else {
+      el.statusText.textContent = 'Idle';
+    }
     if (el.btnToggle) {
-      el.btnToggle.textContent = isRunning ? 'Pause' : 'Turn On';
+      el.btnToggle.textContent = isRunning ? 'Pause' : (hasActivated ? 'Resume' : 'Start');
       el.btnToggle.className = isRunning
         ? 'rounded bg-danger/70 px-3 py-2 font-semibold text-white'
         : 'rounded bg-accent/70 px-3 py-2 font-semibold text-white';
     }
 
     // Debug inputs removed
+
+    // Visibility rules
+    const show = (elem, shouldShow) => {
+      if (!elem) return;
+      elem.classList.toggle('hidden', !shouldShow);
+    };
+    show(el.instructionText, !hasActivated);
+    show(el.statusBlock, hasActivated);
+    show(el.calibrationControls, hasActivated);
+    show(el.calibrationHeadings, hasActivated);
+    show(el.resetCalibrationBlock, hasActivated);
+    show(el.newGraveBlock, calibrated);
   };
 
   // Auto-detect increment: +1
@@ -316,6 +343,7 @@
     }
     window.addEventListener('deviceorientation', onDeviceOrientation);
     isRunning = true;
+    hasActivated = true;
     el.statusText.textContent = 'Detecting…';
     // Keep screen awake while detecting
     requestScreenWakeLock();
