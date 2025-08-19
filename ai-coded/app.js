@@ -1,7 +1,7 @@
 /*
   Bucket Counter App
-  - Calibration of headings (grave, dirt pile, truck)
-  - Automatic detection of swivel grave -> truck with optional dirt pass
+  - Calibration of headings (grave, truck)
+  - Automatic detection of swivel grave -> truck
   - Manual controls and localStorage persistence
   - Works offline and as a PWA (see sw.js and manifest)
 */
@@ -13,25 +13,21 @@
   const STORAGE_KEYS = {
     counter: 'bc.counter',
     grave: 'bc.graveHeading',
-    dirt: 'bc.dirtHeading',
     truck: 'bc.truckHeading',
     tolerance: 'bc.tolerance',
-    debounceMs: 'bc.debounceMs',
-    requireDirtPass: 'bc.requireDirtPass'
+    debounceMs: 'bc.debounceMs'
   };
 
   // Default config
   const DEFAULTS = {
     toleranceDeg: 10,
     debounceMs: 4000,
-    requireDirtPass: true
   };
 
   // State
   let currentHeadingDeg = 0; // 0..360
   let isRunning = false;
   let lastIncrementTs = 0;
-  let hasPassedDirtSinceGrave = false;
   let lastHeadingTs = 0;
 
   // UI elements
@@ -39,20 +35,26 @@
     counterValue: document.getElementById('counterValue'),
     btnInc: document.getElementById('btnInc'),
     btnDec: document.getElementById('btnDec'),
-    btnReset: document.getElementById('btnReset'),
+    btnNewGrave: document.getElementById('btnNewGrave'),
+    btnResetCalibration: document.getElementById('btnResetCalibration'),
     btnSetGrave: document.getElementById('btnSetGrave'),
-    btnSetDirt: document.getElementById('btnSetDirt'),
     btnSetTruck: document.getElementById('btnSetTruck'),
     graveHeadingLabel: document.getElementById('graveHeadingLabel'),
-    dirtHeadingLabel: document.getElementById('dirtHeadingLabel'),
     truckHeadingLabel: document.getElementById('truckHeadingLabel'),
     btnToggle: document.getElementById('btnToggle'),
     statusText: document.getElementById('statusText'),
     headingText: document.getElementById('headingText'),
     inputTolerance: document.getElementById('inputTolerance'),
     inputDebounce: document.getElementById('inputDebounce'),
-    inputRequireDirt: document.getElementById('inputRequireDirt'),
     btnEnableSensors: null
+  };
+
+  const resetCalibration = () => {
+    graveHeading = NaN;
+    truckHeading = NaN;
+    save(STORAGE_KEYS.grave, graveHeading);
+    save(STORAGE_KEYS.truck, truckHeading);
+    render();
   };
 
   // Utilities
@@ -86,17 +88,14 @@
   // Persistence-backed values
   let counter = loadNumber(STORAGE_KEYS.counter, 0);
   let graveHeading = loadNumber(STORAGE_KEYS.grave, NaN);
-  let dirtHeading = loadNumber(STORAGE_KEYS.dirt, NaN);
   let truckHeading = loadNumber(STORAGE_KEYS.truck, NaN);
   let toleranceDeg = loadNumber(STORAGE_KEYS.tolerance, DEFAULTS.toleranceDeg);
   let debounceMs = loadNumber(STORAGE_KEYS.debounceMs, DEFAULTS.debounceMs);
-  let requireDirtPass = loadBool(STORAGE_KEYS.requireDirtPass, DEFAULTS.requireDirtPass);
 
   // Initial UI sync
   const render = () => {
     el.counterValue.textContent = String(counter);
     el.graveHeadingLabel.textContent = Number.isFinite(graveHeading) ? Math.round(graveHeading) : '—';
-    el.dirtHeadingLabel.textContent = Number.isFinite(dirtHeading) ? Math.round(dirtHeading) : '—';
     el.truckHeadingLabel.textContent = Number.isFinite(truckHeading) ? Math.round(truckHeading) : '—';
     el.headingText.textContent = String(Math.round(currentHeadingDeg));
     el.statusText.textContent = isRunning ? 'Detecting…' : 'Idle';
@@ -104,24 +103,43 @@
 
     el.inputTolerance.value = String(toleranceDeg);
     el.inputDebounce.value = String(debounceMs);
-    el.inputRequireDirt.checked = !!requireDirtPass;
   };
 
+  // Auto-detect increment: +1
   const increment = () => {
     counter += 1;
     save(STORAGE_KEYS.counter, counter);
     render();
   };
 
-  const decrement = () => {
-    counter = Math.max(0, counter - 1);
+  // Manual controls: ±0.5
+  const manualInc = () => {
+    counter = Math.max(0, (counter || 0) + 0.5);
     save(STORAGE_KEYS.counter, counter);
     render();
   };
 
-  const reset = () => {
+  const manualDec = () => {
+    counter = Math.max(0, (counter || 0) - 0.5);
+    save(STORAGE_KEYS.counter, counter);
+    render();
+  };
+
+  const newGrave = () => {
+    // Stop detection if running
+    if (isRunning) {
+      window.removeEventListener('deviceorientation', onDeviceOrientation);
+      isRunning = false;
+      el.statusText.textContent = 'Idle';
+    }
+    // Reset count
     counter = 0;
     save(STORAGE_KEYS.counter, counter);
+    // Clear calibration
+    graveHeading = NaN;
+    truckHeading = NaN;
+    save(STORAGE_KEYS.grave, graveHeading);
+    save(STORAGE_KEYS.truck, truckHeading);
     render();
   };
 
@@ -154,15 +172,6 @@
       const h = await readFreshHeading();
       graveHeading = h;
       save(STORAGE_KEYS.grave, graveHeading);
-      hasPassedDirtSinceGrave = false;
-      render();
-    } catch (_) {}
-  };
-  const setDirt = async () => {
-    try {
-      const h = await readFreshHeading();
-      dirtHeading = h;
-      save(STORAGE_KEYS.dirt, dirtHeading);
       render();
     } catch (_) {}
   };
@@ -185,37 +194,20 @@
 
     const near = (target) => smallestAngleDelta(headingDeg, target) <= toleranceDeg;
 
-    // Mark pass through dirt after grave
-    if (Number.isFinite(dirtHeading) && near(dirtHeading)) {
-      if (Number.isFinite(graveHeading)) {
-        hasPassedDirtSinceGrave = true;
-      }
-    }
-
     const nearGrave = near(graveHeading);
     const nearTruck = near(truckHeading);
 
     // Strategy: count when reaching truck, provided we started from grave
-    // Loose heuristic: if we get to truck and either dirt pass is not required, or we marked it after last grave lock
     if (nearTruck) {
-      // if require dirt, ensure we passed it since a grave alignment; otherwise allow direct grave->truck or close
-      const conditionOk = requireDirtPass ? hasPassedDirtSinceGrave : true;
-
-      if (conditionOk) {
-        // Stronger assurance: we also expect that we were near grave recently (within a window). We can't track full history, but we can mark when we see grave.
-        // We track last time near grave; if not recent, we won't count. This reduces false positives.
-        if (lastNearGraveTs && now - lastNearGraveTs < 4000) {
-          increment();
-          lastIncrementTs = now;
-          hasPassedDirtSinceGrave = false; // reset for next cycle
-        }
+      // Assurance: require we were near grave recently (within a window)
+      if (lastNearGraveTs && now - lastNearGraveTs < 4000) {
+        increment();
+        lastIncrementTs = now;
       }
     }
 
     if (nearGrave) {
       lastNearGraveTs = now;
-      // When we lock onto grave, reset dirt pass mark for the next swing
-      hasPassedDirtSinceGrave = false;
     }
   };
 
@@ -318,12 +310,12 @@
       }
     }
 
-    el.btnInc.addEventListener('click', increment);
-    el.btnDec.addEventListener('click', decrement);
-    el.btnReset.addEventListener('click', reset);
+    el.btnInc.addEventListener('click', manualInc);
+    el.btnDec.addEventListener('click', manualDec);
+    if (el.btnNewGrave) el.btnNewGrave.addEventListener('click', newGrave);
+    if (el.btnResetCalibration) el.btnResetCalibration.addEventListener('click', resetCalibration);
 
     el.btnSetGrave.addEventListener('click', setGrave);
-    el.btnSetDirt.addEventListener('click', setDirt);
     el.btnSetTruck.addEventListener('click', setTruck);
 
     el.btnToggle.addEventListener('click', () => {
@@ -348,11 +340,6 @@
         debounceMs = v;
         save(STORAGE_KEYS.debounceMs, debounceMs);
       }
-      render();
-    });
-    el.inputRequireDirt.addEventListener('change', () => {
-      requireDirtPass = !!el.inputRequireDirt.checked;
-      save(STORAGE_KEYS.requireDirtPass, requireDirtPass);
       render();
     });
 

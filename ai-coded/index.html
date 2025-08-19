@@ -40,22 +40,26 @@
           <div id="counterValue" class="mt-2 text-7xl font-bold tabular-nums">0</div>
         </div>
         <div class="mt-4 grid grid-cols-2 gap-3">
-          <button id="btnDec" class="rounded bg-white/10 px-4 py-3 text-lg font-semibold hover:bg-white/20 active:scale-[0.98]">–</button>
-          <button id="btnInc" class="rounded bg-white/10 px-4 py-3 text-lg font-semibold hover:bg-white/20 active:scale-[0.98]">+</button>
+          <button id="btnDec" title="Subtract 0.5" class="rounded bg-white/10 px-4 py-3 text-lg font-semibold hover:bg-white/20 active:scale-[0.98]">–0.5</button>
+          <button id="btnInc" title="Add 0.5" class="rounded bg-white/10 px-4 py-3 text-lg font-semibold hover:bg-white/20 active:scale-[0.98]">+0.5</button>
+        </div>
+        <div class="mt-3">
+          <button id="btnNewGrave" class="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white/90">New Grave</button>
         </div>
       </section>
 
       <section class="mb-6 rounded-lg border border-white/10 bg-white/5 p-4">
         <div class="mb-3 text-sm uppercase tracking-wide text-white/70">Calibration</div>
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-2 gap-3">
           <button id="btnSetGrave" class="rounded bg-white/10 px-3 py-2 font-medium hover:bg-white/20">Set Grave</button>
-          <button id="btnSetDirt" class="rounded bg-white/10 px-3 py-2 font-medium hover:bg-white/20">Set Dirt Pile</button>
           <button id="btnSetTruck" class="rounded bg-white/10 px-3 py-2 font-medium hover:bg-white/20">Set Truck</button>
         </div>
-        <div class="mt-3 grid grid-cols-3 gap-3 text-center text-xs text-white/70">
+        <div class="mt-3 grid grid-cols-2 gap-3 text-center text-xs text-white/70">
           <div>Grave: <span id="graveHeadingLabel">—</span>°</div>
-          <div>Dirt: <span id="dirtHeadingLabel">—</span>°</div>
           <div>Truck: <span id="truckHeadingLabel">—</span>°</div>
+        </div>
+        <div class="mt-3">
+          <button id="btnResetCalibration" class="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white/90">Reset Calibration</button>
         </div>
       </section>
 
@@ -63,9 +67,6 @@
         <div class="mb-3 text-sm uppercase tracking-wide text-white/70">Auto Detection</div>
         <div class="grid grid-cols-1 gap-3">
           <button id="btnToggle" class="rounded bg-accent px-3 py-2 font-semibold text-black hover:opacity-90">Turn On</button>
-        </div>
-        <div class="mt-3">
-          <button id="btnReset" class="w-full rounded bg-danger/90 px-4 py-3 text-lg font-semibold text-white hover:bg-danger">Reset</button>
         </div>
         <div class="mt-3 text-sm text-white/80">
           <div>Status: <span id="statusText">Idle</span></div>
@@ -81,10 +82,6 @@
             <label class="flex items-center justify-between gap-2">
               <span>Debounce (ms)</span>
               <input id="inputDebounce" type="number" min="250" max="5000" step="50" class="w-24 rounded bg-white/10 p-1" />
-            </label>
-            <label class="col-span-2 flex items-center justify-between gap-2">
-              <span>Require dirt pass</span>
-              <input id="inputRequireDirt" type="checkbox" class="h-4 w-4" />
             </label>
           </div>
         </details>
