@@ -29,6 +29,7 @@
   let isRunning = false;
   let lastIncrementTs = 0;
   let lastHeadingTs = 0;
+  let screenWakeLock = null;
 
   // UI elements
   const el = {
@@ -84,6 +85,35 @@
   };
 
   const save = (key, value) => localStorage.setItem(key, String(value));
+
+  // Screen wake lock helpers (iOS Safari 16.4+)
+  const requestScreenWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator && !screenWakeLock) {
+        screenWakeLock = await navigator.wakeLock.request('screen');
+        screenWakeLock.addEventListener('release', () => {
+          screenWakeLock = null;
+          // If still running and page is visible, try to reacquire
+          if (isRunning && document.visibilityState === 'visible') {
+            requestScreenWakeLock().catch(() => {});
+          }
+        });
+      }
+    } catch (_) {
+      // Ignore; on iOS versions without support, do nothing
+    }
+  };
+
+  const releaseScreenWakeLock = async () => {
+    try {
+      if (screenWakeLock) {
+        await screenWakeLock.release();
+        screenWakeLock = null;
+      }
+    } catch (_) {
+      screenWakeLock = null;
+    }
+  };
 
   // Persistence-backed values
   let counter = loadNumber(STORAGE_KEYS.counter, 0);
@@ -285,6 +315,8 @@
     window.addEventListener('deviceorientation', onDeviceOrientation);
     isRunning = true;
     el.statusText.textContent = 'Detecting…';
+    // Keep screen awake while detecting
+    requestScreenWakeLock();
     render();
   };
 
@@ -293,6 +325,7 @@
     window.removeEventListener('deviceorientation', onDeviceOrientation);
     isRunning = false;
     el.statusText.textContent = 'Idle';
+    releaseScreenWakeLock();
     render();
   };
 
@@ -344,6 +377,16 @@
     });
 
     // Enable Sensors button removed
+
+    // Reacquire wake lock when tab becomes visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isRunning) {
+        requestScreenWakeLock();
+      }
+    });
+    // Release on navigation away
+    window.addEventListener('pagehide', releaseScreenWakeLock);
+    window.addEventListener('beforeunload', releaseScreenWakeLock);
   };
 
   document.addEventListener('DOMContentLoaded', init);
