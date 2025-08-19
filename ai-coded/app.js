@@ -131,8 +131,8 @@
     if (el.btnToggle) {
       el.btnToggle.textContent = isRunning ? 'Turn Off' : 'Turn On';
       el.btnToggle.className = isRunning
-        ? 'rounded bg-danger/50 px-3 py-2 font-semibold text-white'
-        : 'rounded bg-accent/50 px-3 py-2 font-semibold text-black';
+        ? 'rounded bg-danger/70 px-3 py-2 font-semibold text-white'
+        : 'rounded bg-accent/70 px-3 py-2 font-semibold text-white';
     }
 
     // Debug inputs removed
