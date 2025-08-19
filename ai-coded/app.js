@@ -28,6 +28,7 @@
   let currentHeadingDeg = 0; // 0..360
   let isRunning = false;
   let hasActivated = false; // became true after first successful Start
+  let headingReady = false; // becomes true after first valid heading
   let lastIncrementTs = 0;
   let lastHeadingTs = 0;
   let screenWakeLock = null;
@@ -136,7 +137,9 @@
     el.truckHeadingLabel.textContent = Number.isFinite(truckHeading) ? Math.round(truckHeading) : '—';
     el.headingText.textContent = String(Math.round(currentHeadingDeg));
     const calibrated = Number.isFinite(graveHeading) && Number.isFinite(truckHeading);
-    if (isRunning && !calibrated) {
+    if (isRunning && !headingReady) {
+      el.statusText.textContent = 'Initializing sensors…';
+    } else if (isRunning && !calibrated) {
       el.statusText.textContent = 'Ready to calibrate';
     } else if (isRunning && calibrated) {
       el.statusText.textContent = 'Detecting…';
@@ -161,13 +164,15 @@
     if (el.instructionText) {
       if (!hasActivated) {
         el.instructionText.textContent = 'Press Start to enable motion detection. Then set Grave and Truck positions.';
+      } else if (!headingReady) {
+        el.instructionText.textContent = 'Move device to initialize sensors…';
       } else if (!Number.isFinite(truckHeading)) {
         el.instructionText.textContent = 'Set Truck Position';
       } else if (!Number.isFinite(graveHeading)) {
         el.instructionText.textContent = 'Set Grave Position';
       }
     }
-    const shouldShowInstruction = !hasActivated || !calibrated;
+    const shouldShowInstruction = !hasActivated || !headingReady || !calibrated;
     show(el.instructionText, shouldShowInstruction);
     show(el.statusBlock, hasActivated);
     show(el.calibrationControls, hasActivated);
@@ -310,6 +315,9 @@
   const onDeviceOrientation = (event) => {
     currentHeadingDeg = deriveHeadingFromOrientation(event);
     lastHeadingTs = Date.now();
+    if (!headingReady && Number.isFinite(currentHeadingDeg)) {
+      headingReady = true;
+    }
     render();
     maybeDetectSwivel(currentHeadingDeg);
   };
@@ -355,6 +363,7 @@
     window.addEventListener('deviceorientation', onDeviceOrientation);
     isRunning = true;
     hasActivated = true;
+    headingReady = false;
     el.statusText.textContent = 'Detecting…';
     // Keep screen awake while detecting
     requestScreenWakeLock();
