@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bucket Counter</title>
+    <title>My Bucket Counter</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
@@ -11,36 +11,37 @@
         <h1>Bucket Counter</h1>
     </header>
     <main>
+    //count section
         <section>
             <div>
                 <div>buckets</div>
                 <div id="counterValue">0</div>
             </div>
             <div>
-                <button id="btnMinus">-</button>
-                <button id="btnPlus">+</button>
+                <button id="btnMinus">1/2</button>
+                <button id="btnPlus">1/2</button>
             </div>
         </section>
+    //calibration section
         <section>
-            <div>Calibration</div>
+            <div>Calibration & Status</div>
             <div>
-                <button id="btnSetGrave">Set Grave Pos</button>
-                <button id="btnSetTruck">Set Truck Pos</button>
+                <button id="btnSetGrave">Set Grave</button>
+                <button id="btnSetTruck">Set Truck</button>
             </div>
             <div>
-                <div>Grave: <span id="graveHeadingLabel">—</span></div>
-                <div>Truck: <span id="truckHeadingLabel">—</span></div>
-            </div>
-        </section>
-        <section>
-            <div>Status</div>
-            <div>
-                <button id="btnSetGrave">Set Grave Pos</button>
-                <button id="btnSetTruck">Set Truck Pos</button>
+                <div>Grave: <span id="graveHeadingLabel">—</span>°</div>
+                <div>Truck: <span id="truckHeadingLabel">—</span>°</div>
             </div>
             <div>
-                <div>Grave: <span id="graveHeadingLabel">—</span></div>
-                <div>Truck: <span id="truckHeadingLabel">—</span></div>
+                <button id="btnTurnOn">Turn On</button>
+            </div>
+            <div>
+                <div>Status: <span id="statusLabel">Idle</span></div>
+                <div>Heading: <span id="headingLabel">0</span>°</div>
+            </div>
+            <div>
+                <button id="btnResetCalibration">Reset Calibration</button>
             </div>
         </section>
     </main>
