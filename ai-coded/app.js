@@ -23,7 +23,7 @@
   // Default config
   const DEFAULTS = {
     toleranceDeg: 10,
-    debounceMs: 1200,
+    debounceMs: 4000,
     requireDirtPass: true
   };
 
@@ -52,7 +52,7 @@
     inputTolerance: document.getElementById('inputTolerance'),
     inputDebounce: document.getElementById('inputDebounce'),
     inputRequireDirt: document.getElementById('inputRequireDirt'),
-    btnEnableSensors: document.getElementById('btnEnableSensors')
+    btnEnableSensors: null
   };
 
   // Utilities
@@ -130,7 +130,7 @@
     const granted = await ensureSensorPermissions();
     if (!granted) {
       el.statusText.textContent = 'Permission required to read heading';
-      el.btnEnableSensors.classList.remove('hidden');
+      // No enable button; user must grant in browser settings
       throw new Error('sensor-permission-denied');
     }
     return await new Promise((resolve, reject) => {
@@ -285,8 +285,8 @@
         location.hostname !== '127.0.0.1';
       el.statusText.textContent = insecure
         ? 'Motion blocked on HTTP. Use HTTPS or enable in Safari settings.'
-        : 'Permission denied. Tap Enable Sensors, then move device.';
-      el.btnEnableSensors.classList.remove('hidden');
+        : 'Permission denied. Enable motion/orientation in browser settings, then Start.';
+      // No enable button to show
       render();
       return;
     }
@@ -308,14 +308,13 @@
   const init = () => {
     render();
 
-    // On iOS (permission-gated), proactively show the enable button
+    // On iOS (permission-gated), surface status but do not show an enable button
     const needsExplicitPermission =
       (window.DeviceMotionEvent && typeof window.DeviceMotionEvent.requestPermission === 'function') ||
       (window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission === 'function');
     if (needsExplicitPermission) {
-      el.btnEnableSensors.classList.remove('hidden');
       if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-        el.statusText.textContent = 'Tap Enable Sensors, then Start. For iOS, HTTPS works best.';
+        el.statusText.textContent = 'For iOS, use HTTPS for sensors. Grant permissions in Settings if needed.';
       }
     }
 
@@ -357,12 +356,7 @@
       render();
     });
 
-    el.btnEnableSensors.addEventListener('click', async () => {
-      const ok = await ensureSensorPermissions();
-      if (ok) {
-        el.btnEnableSensors.classList.add('hidden');
-      }
-    });
+    // Enable Sensors button removed
   };
 
   document.addEventListener('DOMContentLoaded', init);
