@@ -202,20 +202,28 @@
   };
 
   const newGrave = () => {
-    // Stop detection if running
+    // Stop detection and revert to initial state
     if (isRunning) {
       window.removeEventListener('deviceorientation', onDeviceOrientation);
-      isRunning = false;
-      el.statusText.textContent = 'Idle';
     }
-    // Reset count
+    isRunning = false;
+    hasActivated = false;
+    headingReady = false;
+    releaseScreenWakeLock();
+
+    // Reset counters and calibration
     counter = 0;
     save(STORAGE_KEYS.counter, counter);
-    // Clear calibration
     graveHeading = NaN;
     truckHeading = NaN;
     save(STORAGE_KEYS.grave, graveHeading);
     save(STORAGE_KEYS.truck, truckHeading);
+
+    // Reset detection helpers
+    lastNearGraveTs = 0;
+    lastIncrementTs = 0;
+
+    el.statusText.textContent = 'Idle';
     render();
   };
 
