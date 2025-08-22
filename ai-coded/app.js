@@ -53,9 +53,10 @@
     calibrationHeadings: document.getElementById('calibrationHeadings'),
     resetCalibrationBlock: document.getElementById('resetCalibrationBlock'),
     statusBlock: document.getElementById('statusBlock'),
+    permissionsBlock: document.getElementById('permissionsBlock'),
+    btnRetryPermissions: document.getElementById('btnRetryPermissions'),
+    btnReloadApp: document.getElementById('btnReloadApp'),
     newGraveBlock: document.getElementById('newGraveBlock'),
-    // Debug inputs removed
-    btnEnableSensors: null
   };
 
   const resetCalibration = () => {
@@ -149,8 +150,8 @@
     if (el.btnToggle) {
       el.btnToggle.textContent = isRunning ? 'Pause' : (hasActivated ? 'Resume' : 'Start');
       el.btnToggle.className = isRunning
-        ? 'rounded bg-danger/70 px-3 py-2 font-semibold text-white'
-        : 'rounded bg-accent/70 px-3 py-2 font-semibold text-white';
+        ? 'rounded bg-danger px-3 py-2 font-semibold text-white'
+        : 'rounded bg-accent px-3 py-2 font-semibold text-white';
     }
 
     // Debug inputs removed
@@ -179,7 +180,11 @@
     show(el.calibrationHeadings, hasActivated);
     show(el.resetCalibrationBlock, hasActivated);
     show(el.newGraveBlock, hasActivated);
+    // Permissions recovery block: shown only when we know permissions are denied
+    show(el.permissionsBlock, permissionsDenied === true);
   };
+  // Track explicit permission denial in-session
+  let permissionsDenied = false;
 
   // Auto-detect increment: +1
   const increment = () => {
@@ -231,8 +236,9 @@
   const readFreshHeading = async () => {
     const granted = await ensureSensorPermissions();
     if (!granted) {
+      permissionsDenied = true;
       el.statusText.textContent = 'Permission required to read heading';
-      // No enable button; user must grant in browser settings
+      render();
       throw new Error('sensor-permission-denied');
     }
     return await new Promise((resolve, reject) => {
@@ -364,7 +370,8 @@
     if (isRunning) return;
     const granted = await ensureSensorPermissions();
     if (!granted) {
-      el.statusText.textContent = 'Permission denied. Enable motion/orientation in browser settings, then Start.';
+      permissionsDenied = true;
+      el.statusText.textContent = 'Permission denied. Tap Retry to try again or Reload the app to re-prompt.';
       render();
       return;
     }
@@ -390,6 +397,28 @@
   // Wire up UI events
   const init = () => {
     render();
+    // Permissions recovery actions
+    if (el.btnRetryPermissions) {
+      el.btnRetryPermissions.addEventListener('click', async () => {
+        // Retry must be from a user gesture to show prompt on iOS
+        const granted = await ensureSensorPermissions();
+        permissionsDenied = !granted;
+        if (granted) {
+          el.statusText.textContent = 'Permissions granted. You can Start now or continue.';
+          render();
+        } else {
+          el.statusText.textContent = 'Still denied. You may need to reload and allow access.';
+          render();
+        }
+      });
+    }
+    if (el.btnReloadApp) {
+      el.btnReloadApp.addEventListener('click', () => {
+        // For PWAs, ensure we bypass SW cache where possible
+        try { navigator.serviceWorker?.controller?.postMessage('skipWaiting'); } catch (_) {}
+        window.location.reload();
+      });
+    }
 
     // On iOS (permission-gated), surface status but do not show an enable button
 
